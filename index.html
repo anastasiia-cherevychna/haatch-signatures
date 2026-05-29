@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heights — Email Signature Builder</title>
+<link rel="stylesheet" href="https://use.typekit.net/jfd8moi.css">
+<style>
+  :root {
+    --bg: #EBEAE9;
+    --ink: #332D28;
+    --green: #CAFC3B;
+    --panel: #ffffff;
+    --muted: #8a847e;
+    --line: #d8d6d3;
+    --field-line: #332D28;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "neue-haas-grotesk-text", "Inter", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 1440px; margin: 0 auto; padding: 40px 56px 64px; min-height: 100vh; position: relative; }
+
+  /* header */
+  .top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 56px; }
+  .wordmark { font-size: 54px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; display: inline-flex; align-items: flex-start; gap: 6px; }
+  .wordmark .arrow { font-size: 26px; margin-top: 4px; }
+  .top-right { display: inline-flex; align-items: center; gap: 16px; margin-top: 6px; }
+  .builder-tag { color: var(--ink); font-size: 16px; font-weight: 400; line-height: 1.25; }
+  .sep { width: 1px; height: 36px; background: var(--ink); display: inline-block; }
+  .client-logo { height: 28px; width: auto; display: block; }
+
+  /* layout */
+  .layout { display: grid; grid-template-columns: 410px 1fr; gap: 56px; align-items: start; }
+  @media (max-width: 1040px) { .layout { grid-template-columns: 1fr; gap: 40px; } }
+
+  .col-label { font-size: 22px; font-weight: 500; letter-spacing: 0; text-transform: none; margin: 0 0 12px; }
+  .col-help { font-size: 14px; line-height: 1.5; color: var(--muted); margin: 0 0 28px; max-width: 40ch; }
+
+  /* form panel */
+  .panel { background: var(--panel); border-radius: 4px; padding: 32px 36px 40px; }
+  .field { margin-bottom: 26px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 15px; font-weight: 400; margin-bottom: 10px; }
+  input[type=text], select {
+    width: 100%; border: 0; border-bottom: 1.5px solid rgba(51,45,40,0.4);
+    background: transparent; padding: 6px 0; font-size: 17px; color: var(--ink);
+    font-family: inherit; border-radius: 0;
+  }
+  input::placeholder { color: #b3aea9; }
+  input:focus, select:focus { outline: 0; border-bottom-color: var(--ink); }
+  input.invalid { border-bottom-color: #c0392b; }
+  .field .err { display: none; font-size: 12px; color: #c0392b; margin-top: 6px; }
+  .field .err.show { display: block; }
+  select { -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%23332D28' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 2px center; }
+
+  /* toggle row */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+  .toggle-row span { font-size: 16px; font-weight: 400; }
+  .tgl { width: 44px; height: 24px; border-radius: 999px; background: #d8d6d3; cursor: pointer; position: relative; flex: none; transition: background .15s; }
+  .tgl::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .tgl.on { background: #ff8a3d; }
+  .tgl.on::after { left: 23px; }
+
+  /* preview side */
+  .modes { display: inline-flex; border: 1px solid var(--ink); border-radius: 8px; overflow: hidden; }
+  .modes button { font: inherit; font-size: 17px; font-weight: 500; padding: 12px 28px; cursor: pointer; border: 0; background: #fff; color: var(--ink); line-height: 1; }
+  .modes button.on { background: var(--ink); color: #fff; }
+  .preview-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+
+  .stage { border-radius: 4px; overflow: hidden; }
+  .stage-inner { padding: 36px; transition: background .15s; }
+  .stage-inner.light { background: #ffffff; }
+  .stage-inner.dark  { background: #0b0b0b; }
+
+  .actions { margin-top: 26px; display: flex; gap: 14px; align-items: center; }
+  .btn-green {
+    font: inherit; font-weight: 500; font-size: 17px; letter-spacing: .02em; text-transform: uppercase;
+    cursor: pointer; background: var(--green); color: var(--ink);
+    border: 1.5px solid var(--green); border-radius: 100px; padding: 12px 22px; line-height: 1;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-outline {
+    font: inherit; font-weight: 500; font-size: 17px; letter-spacing: .02em; text-transform: uppercase;
+    cursor: pointer; background: transparent; color: var(--ink);
+    border: 1.5px solid var(--ink); border-radius: 100px; padding: 12px 22px; line-height: 1;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .copied { font-size: 14px; color: var(--ink); font-weight: 700; opacity: 0; transition: opacity .2s; }
+  .copied.show { opacity: 1; }
+
+  /* footer */
+  .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 80px; font-size: 15px; color: var(--ink); }
+  .foot .left { display: inline-flex; align-items: center; gap: 8px; }
+  .foot .right { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="top">
+    <div class="wordmark"><img src="https://cdn.prod.website-files.com/69df74c4b225eb82b932b2cd/6a18400c390d07357c4da235_heights%20logo.png" alt="Heights" style="height:54px;width:auto;display:block;"></div>
+    <div class="top-right">
+      <span class="builder-tag">Custom Email<br>Signature Builder</span>
+      <span class="sep"></span>
+      <img class="client-logo" src="https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a197e3ad7e9f8e09886c4b6_Haatch.png" alt="Haatch">
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- ============ FORM ============ -->
+    <div>
+      <div class="panel">
+        <h2 class="col-label">Your Details</h2>
+        <p class="col-help">Pick your name to autofill, then check each field. Leave a link blank to hide its icon or button.</p>
+        <div class="toggle-row">
+          <span>With headshot</span>
+          <div class="tgl on" id="withHeadshot" role="switch" aria-checked="true" tabindex="0"></div>
+        </div>
+
+        <div class="field">
+          <label for="person">Team member</label>
+          <select id="person"><option value="">— Select your name —</option></select>
+        </div>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" placeholder="Full name" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="title">Job title</label>
+          <input type="text" id="title" placeholder="Job title" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="linkedin">LinkedIn URL</label>
+          <input type="text" id="linkedin" placeholder="link/" autocomplete="off">
+          <span class="err" id="err-linkedin">Enter a full URL, e.g. https://linkedin.com/in/you</span>
+        </div>
+        <div class="field">
+          <label for="website">Company website URL</label>
+          <input type="text" id="website" placeholder="link/" autocomplete="off">
+          <span class="err" id="err-website">Enter a full URL, e.g. https://haatch.com</span>
+        </div>
+        <div class="field">
+          <label for="email">Email / Newsletter</label>
+          <input type="text" id="email" placeholder="email@domain" autocomplete="off">
+          <span class="err" id="err-email">Enter a valid email (name@domain.com) or full URL</span>
+        </div>
+        <div class="field">
+          <label for="ctaLabel">CTA copy</label>
+          <input type="text" id="ctaLabel" placeholder="Eg &ldquo;Book a call&rdquo;" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="cta">CTA link</label>
+          <input type="text" id="cta" placeholder="link/" autocomplete="off">
+          <span class="err" id="err-cta">Enter a full URL, e.g. https://calendly.com/you</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PREVIEW ============ -->
+    <div>
+      <div class="preview-top">
+        <h2 class="col-label" style="margin:0;">Your Signature</h2>
+        <div class="modes">
+          <button id="m-light" class="on" type="button">Light</button>
+          <button id="m-dark" type="button">Dark</button>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="stage-inner light" id="stage"></div>
+      </div>
+      <div class="actions">
+        <button class="btn-green" id="copy" type="button">Copy signature</button>
+        <button class="btn-outline" id="download" type="button">Download HTML</button>
+        <span class="copied" id="copied">Copied</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="left">Heights Digital</span>
+    <span class="right">2026</span>
+  </div>
+</div>
+
+<script>
+// ---------- shared brand assets ----------
+var A = {
+  logo:        "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15aabb67c7a00e57e6278e_logo-universal.png",
+  li:          "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15aabb287c0afe7e9ff23a_icon-linkedin.png",
+  web:         "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15aabbe4071a7b17338b28_logo-website.png",
+  mail:        "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15aabbcf882eae4fe243b7_logo-email.png",
+  quote:       "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15973053fc76a7557ae524_QUOTE.png",
+  b1:          "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a159239eeacd17ca40e9eba_award-growth-investor.png",
+  b2:          "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923bbca642eadb58f248_award-eisa.png",
+  b3:          "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a159239ce85dee758dcd0b5_award-angel-investment.png",
+  b4:          "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a159239e4034433c03bd58b_award-seedlegals.png"
+};
+
+// ---------- team data ----------
+var TEAM = [
+  ["Scott Weavers-Wright OBE","Co-Founder & General Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923e24318a82f552fe2a_headshot-scott.jpg"],
+  ["Fred Soneya","Co-Founder & General Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923bc0394fc57a0ecdfc_headshot-fred.jpg"],
+  ["Elaine Weavers-Wright","Co-Founder","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923b74aea6dadc76628e_headshot-elaine.jpg"],
+  ["Mark Bennett","Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923d79b02bc9fa85dc23_headshot-mark.jpg"],
+  ["Jonathan Keeling","Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923c0c3a8d8a9d6dd1ce_headshot-JK.jpg"],
+  ["Jeremy Luzinda","Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923ce4034433c03bd6c7_headshot-jeremy.jpg"],
+  ["Olivia Drinnan","Director, Advisor Fundraising","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923c60c392556c409c47_headshot-liv.jpg"],
+  ["Jessica Fox","Head of Investor Relations","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923cce06a4b2cd9d3e23_headshot-jessica.jpg"],
+  ["Tom Healy","Head of Fundraising","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923e98d5989e39f9ed70_headshot-tom.jpg"],
+  ["Sophie Weavers-Wright","Head of Platform & Portfolio","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923eb2801582e42d22ff_headshot-sophie.jpg"],
+  ["Daniel Samson","General Counsel","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923b12b3f274de251ca7_headshot-daniel.jpg"],
+  ["Kate Cooper","Head of Compliance Operations","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923c772362153fbfebb9_headshot-kate.jpg"],
+  ["Charlie Weavers-Wright","Principal (Seed)","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923b837f4fc12d8e53f3_headshot-charlie.jpg"],
+  ["Hannah Purser","Head of Operations","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923b740b0847b5275c02_headshot-hannah.jpg"],
+  ["Stephen Doherty","Director of Fund Operations and Control","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923e09d19e60390df0ed_headshot-stephen.jpg"],
+  ["Aini Hashim","Associate (Growth)","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923bdfbde0df72e5b68c_headshot-aini.jpg"],
+  ["Marwa Ebrahim","Associate (Pre-Seed)","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a159a6abe9e0314f9f74b1f_headshot-marwa.jpg"],
+  ["Matt Smith","Operating Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923c74aea6dadc76635f_headshot-matt.jpg"],
+  ["Jim Hawker","Operating Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923c0c3a8d8a9d6dd16f_headshot-jim.jpg"],
+  ["Marcel Hedman","Venture Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923c12b3f274de251d86_headshot-marcel.jpg"],
+  ["James Brooke","Operating Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923b99180f3d3506288f_headshot-james.jpg"],
+  ["David Ola","Venture Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923c92b3e33b5f51dd5e_headshot-david.jpg"],
+  ["Emma Kisby","Operating Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923b96196beb0ed4c6db_headshot-emma.jpg"],
+  ["Roei Samuel","Operating Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923ec5f2f961a969e66a_headshot-roei.jpg"],
+  ["Nick Bygate","Operating Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923cbeb73e3d17c23ddb_headshot-nick.jpg"],
+  ["Richard Illingworth","Operating Partner","https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923eb5aeb9f0eb156c3b_headshot-richard.jpg"]
+];
+
+var DEFAULTS = {
+  linkedin: "https://uk.linkedin.com/company/haatch",
+  website:  "https://haatch.com/",
+  email:    "https://haatch.com/news",
+  cta:      "",
+  ctaLabel: "Book a call",
+  quote:    "The best established (S)EIS Manager of its age"
+};
+
+function $(id){ return document.getElementById(id); }
+var F = { name:$("name"), title:$("title"), linkedin:$("linkedin"),
+          website:$("website"), email:$("email"), cta:$("cta"),
+          ctaLabel:$("ctaLabel") };
+var mode = "light";
+var withHeadshot = true;
+
+(function(){
+  var sel = $("person");
+  for (var i=0;i<TEAM.length;i++){
+    var o = document.createElement("option");
+    o.value = String(i); o.textContent = TEAM[i][0];
+    sel.appendChild(o);
+  }
+})();
+
+$("person").addEventListener("change", function(){
+  if (this.value === "") return;
+  var p = TEAM[parseInt(this.value,10)];
+  F.name.value = p[0];
+  F.title.value = p[1];
+  F.name.setAttribute("data-headshot", p[2]);
+  F.linkedin.value = DEFAULTS.linkedin;
+  F.website.value  = DEFAULTS.website;
+  F.email.value    = "";
+  F.cta.value      = "";
+  F.ctaLabel.value = "";
+  render();
+});
+
+for (var k in F){ F[k].addEventListener("input", render); }
+
+// ---------- link / email validation ----------
+function looksLikeUrl(v){
+  if (/^https?:\/\//i.test(v)) {
+    try { new URL(v); return /\.[a-z]{2,}/i.test(v); } catch(e){ return false; }
+  }
+  // allow bare domains like haatch.com/path
+  return /^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(v);
+}
+function looksLikeEmail(v){
+  return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v);
+}
+function validateField(input, errId, kind){
+  var v = input.value.trim();
+  var err = $(errId);
+  var ok = true;
+  if (v !== "") {
+    if (kind === "email") ok = looksLikeEmail(v) || looksLikeUrl(v);
+    else ok = looksLikeUrl(v);
+  }
+  input.className = ok ? "" : "invalid";
+  err.className = ok ? "err" : "err show";
+  return ok;
+}
+$("linkedin").addEventListener("blur", function(){ validateField(this,"err-linkedin","url"); });
+$("website").addEventListener("blur", function(){ validateField(this,"err-website","url"); });
+$("email").addEventListener("blur", function(){ validateField(this,"err-email","email"); });
+$("cta").addEventListener("blur", function(){ validateField(this,"err-cta","url"); });
+// clear the error as soon as they start correcting it
+["linkedin","website","email","cta"].forEach(function(id){
+  $(id).addEventListener("input", function(){ this.className=""; $("err-"+id).className="err"; });
+});
+
+var ni = $("withHeadshot");
+function toggleNoImage(){
+  withHeadshot = !withHeadshot;
+  ni.className = withHeadshot ? "tgl on" : "tgl";
+  ni.setAttribute("aria-checked", withHeadshot ? "true" : "false");
+  render();
+}
+ni.addEventListener("click", toggleNoImage);
+ni.addEventListener("keydown", function(e){ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggleNoImage(); }});
+
+$("m-light").addEventListener("click", function(){ setMode("light"); });
+$("m-dark").addEventListener("click", function(){ setMode("dark"); });
+function setMode(m){
+  mode = m;
+  $("m-light").className = m==="light" ? "on" : "";
+  $("m-dark").className  = m==="dark"  ? "on" : "";
+  $("stage").className   = "stage-inner " + m;
+  render();
+}
+
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function buildSignature(dark){
+  var headshot = F.name.getAttribute("data-headshot") || "";
+  var name  = F.name.value.trim()  || "Full Name";
+  var title = F.title.value.trim() || "Job Title";
+  var li = F.linkedin.value.trim(), web = F.website.value.trim(), mail = F.email.value.trim();
+  // If the value looks like an email (has @ and no protocol), wrap in mailto:
+  // so clicking the envelope opens a new mail. URLs pass through unchanged.
+  if (mail && mail.indexOf("@") > -1 && !/^https?:|^mailto:/i.test(mail)) {
+    mail = "mailto:" + mail;
+  }
+  var cta = F.cta.value.trim();
+  var quote = DEFAULTS.quote;
+  var ctaLabel = F.ctaLabel.value.trim() || "Book a call";
+
+  var logo = A.logo, liIc = A.li, webIc = A.web, mailIc = A.mail;
+  var nameC = dark ? "#ffffff" : "#000000";
+  var subC  = dark ? "#9aa0a6" : "#666666";
+
+  function icon(href, src, alt){
+    if (!href) return "";
+    return '<td style="vertical-align:middle;padding-right:14px;">'
+      + '<a href="'+esc(href)+'" target="_blank" style="text-decoration:none;">'
+      + '<img src="'+src+'" width="24" height="24" alt="'+alt+'" '
+      + 'style="display:block;border:0;width:24px;height:24px;"></a></td>';
+  }
+  var iconsRow = '<table border="0" cellpadding="0" cellspacing="0"><tr>'
+      + icon(li, liIc, "LinkedIn") + icon(web, webIc, "Website") + icon(mail, mailIc, "Email")
+      + '</tr></table>';
+
+  var ctaRow = cta
+    ? '<tr><td style="padding-top:14px;">'
+      + '<table border="0" cellpadding="0" cellspacing="0"><tr>'
+      + '<td bgcolor="#9eff66" style="background:#9eff66 !important;background-color:#9eff66 !important;border-radius:6px;mso-line-height-rule:exactly;">'
+      + '<a href="'+esc(cta)+'" target="_blank" '
+      + 'style="display:block;padding:11px 22px;font-family:Arial,Helvetica,sans-serif;'
+      + 'font-size:13px;color:#0b0b0b;text-decoration:none;">'+esc(ctaLabel)+'</a>'
+      + '</td></tr></table></td></tr>'
+    : '';
+
+  var quoteBlock = quote
+    ? '<tr><td style="padding:18px 0;">'
+      + '<table width="100%" border="0" cellpadding="0" cellspacing="0">'
+      + '<tr><td style="border-top:1px solid '+(dark?"#2a2a2a":"#e2e2de")+';font-size:0;line-height:0;">&nbsp;</td></tr>'
+      + '<tr><td style="padding:16px 0;"><table border="0" cellpadding="0" cellspacing="0"><tr>'
+      + '<td style="vertical-align:top;padding-right:12px;"><img src="'+A.quote+'" width="34" alt="" style="display:block;border:0;width:34px;height:auto;"></td>'
+      + '<td style="vertical-align:middle;">'
+      + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:17px;color:'+nameC+';">'+esc(quote)+'</div>'
+      + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:.04em;color:'+subC+';text-transform:uppercase;padding-top:3px;">&mdash; Hardman &amp; Co, 2025.</div>'
+      + '</td></tr></table></td></tr>'
+      + '<tr><td style="border-top:1px solid '+(dark?"#2a2a2a":"#e2e2de")+';font-size:0;line-height:0;">&nbsp;</td></tr>'
+      + '</table></td></tr>'
+    : '';
+
+  var badges = '<tr><td style="padding-top:6px;">'
+    + '<table border="0" cellpadding="0" cellspacing="0"><tr>'
+    + '<td style="padding-right:8px;"><img src="'+A.b1+'" height="36" alt="Growth Investor Awards winner" style="display:block;border:0;height:36px;width:auto;"></td>'
+    + '<td style="padding-right:8px;"><img src="'+A.b2+'" height="36" alt="EISA Awards winner" style="display:block;border:0;height:36px;width:auto;"></td>'
+    + '<td style="padding-right:8px;"><img src="'+A.b3+'" height="36" alt="UKBAA Angel Investment Awards winner" style="display:block;border:0;height:36px;width:auto;"></td>'
+    + '<td><img src="'+A.b4+'" height="36" alt="SeedLegals Startup Awards winner" style="display:block;border:0;height:36px;width:auto;"></td>'
+    + '</tr></table></td></tr>';
+
+  var topBlock;
+  if (!withHeadshot) {
+    // No-image layout: logo with vertical divider, then name/title/icons/cta.
+    topBlock = '<tr><td>'
+      + '<table border="0" cellpadding="0" cellspacing="0"><tr>'
+      + '<td style="vertical-align:middle;padding-right:20px;border-right:1.5px solid '+(dark?"#2a2a2a":"#e2e2de")+';">'
+      + '<a href="'+esc(web||"#")+'" target="_blank" style="text-decoration:none;">'
+      + '<img src="'+logo+'" width="120" alt="Haatch" style="display:block;border:0;width:120px;max-width:120px;height:auto;"></a>'
+      + '</td>'
+      + '<td style="vertical-align:middle;padding-left:20px;">'
+      + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;color:'+nameC+';line-height:1.15;">'+esc(name)+'</div>'
+      + '<div style="height:5px;line-height:5px;font-size:5px;">&nbsp;</div>'
+      + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:'+subC+';">'+esc(title)+'</div>'
+      + '<div style="height:12px;line-height:12px;font-size:12px;">&nbsp;</div>'
+      + iconsRow
+      + '<table border="0" cellpadding="0" cellspacing="0">'+ctaRow+'</table>'
+      + '</td></tr></table>'
+      + '</td></tr>';
+  } else {
+    var valign = cta ? "middle" : "top";
+    topBlock = '<tr><td>'
+      + '<table border="0" cellpadding="0" cellspacing="0"><tr>'
+      + '<td style="vertical-align:'+valign+';padding-right:18px;">'
+      + '<img src="'+esc(headshot)+'" width="100" height="78" alt="'+esc(name)+'" style="display:block;border:0;width:100px;height:78px;border-radius:2px;">'
+      + '<div style="height:10px;line-height:10px;font-size:10px;">&nbsp;</div>'
+      + '<a href="'+esc(web||"#")+'" target="_blank" style="text-decoration:none;">'
+      + '<img src="'+logo+'" width="100" alt="Haatch" style="display:block;border:0;width:100px;max-width:100px;height:auto;"></a>'
+      + '</td>'
+      + '<td style="vertical-align:'+valign+';">'
+      + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;color:'+nameC+';line-height:1.15;">'+esc(name)+'</div>'
+      + '<div style="height:5px;line-height:5px;font-size:5px;">&nbsp;</div>'
+      + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:'+subC+';">'+esc(title)+'</div>'
+      + '<div style="height:12px;line-height:12px;font-size:12px;">&nbsp;</div>'
+      + iconsRow
+      + '<table border="0" cellpadding="0" cellspacing="0">'+ctaRow+'</table>'
+      + '</td></tr></table>'
+      + '</td></tr>';
+  }
+
+  return '<table border="0" cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;">'
+    + topBlock + quoteBlock + badges + '</table>';
+}
+
+function render(){ $("stage").innerHTML = buildSignature(mode === "dark"); }
+
+$("copy").addEventListener("click", function(){
+  var html = buildSignature(false);
+  try {
+    var data = [new ClipboardItem({"text/html": new Blob([html],{type:"text/html"}), "text/plain": new Blob([html],{type:"text/plain"})})];
+    navigator.clipboard.write(data).then(flash, function(){ navigator.clipboard.writeText(html); flash(); });
+  } catch(e){ navigator.clipboard.writeText(html); flash(); }
+});
+function flash(){ var c=$("copied"); c.className="copied show"; setTimeout(function(){c.className="copied";},1800); }
+
+$("download").addEventListener("click", function(){
+  var html = "<!DOCTYPE html><html><body>" + buildSignature(false) + "</body></html>";
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([html],{type:"text/html"}));
+  a.download = "haatch-signature.html"; a.click();
+});
+
+render();
+</script>
+</body>
+</html>
