@@ -147,9 +147,13 @@
           <span class="err" id="err-website">Enter a full URL, e.g. https://haatch.com</span>
         </div>
         <div class="field">
-          <label for="email">Email / Newsletter</label>
+          <label for="email">Email</label>
           <input type="text" id="email" placeholder="email@domain" autocomplete="off">
           <span class="err" id="err-email">Enter a valid email (name@domain.com) or full URL</span>
+        </div>
+        <div class="field">
+          <label for="phone">Phone</label>
+          <input type="text" id="phone" placeholder="+44 7123 456789" autocomplete="off">
         </div>
         <div class="field">
           <label for="ctaLabel">CTA copy</label>
@@ -196,6 +200,7 @@ var A = {
   li:          "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15aabb287c0afe7e9ff23a_icon-linkedin.png",
   web:         "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15aabbe4071a7b17338b28_logo-website.png",
   mail:        "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15aabbcf882eae4fe243b7_logo-email.png",
+  phone:       "https://cdn.prod.website-files.com/69df74c4b225eb82b932b2cd/6a283ce221f4752abc3c7b6a_logo-phone.png",
   quote:       "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15973053fc76a7557ae524_QUOTE.png",
   b1:          "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a159239eeacd17ca40e9eba_award-growth-investor.png",
   b2:          "https://cdn.prod.website-files.com/68d66c64623a78dd4618d3eb/6a15923bbca642eadb58f248_award-eisa.png",
@@ -239,13 +244,13 @@ var DEFAULTS = {
   email:    "https://haatch.com/news",
   cta:      "",
   ctaLabel: "Book a call",
-  quote:    "The best established (S)EIS Manager of its age"
+  quote:    "Haatch remains the best established S/EIS manager of its age in the market"
 };
 
 function $(id){ return document.getElementById(id); }
 var F = { name:$("name"), title:$("title"), linkedin:$("linkedin"),
-          website:$("website"), email:$("email"), cta:$("cta"),
-          ctaLabel:$("ctaLabel") };
+          website:$("website"), email:$("email"), phone:$("phone"),
+          cta:$("cta"), ctaLabel:$("ctaLabel") };
 var mode = "light";
 var withHeadshot = true;
 
@@ -267,6 +272,7 @@ $("person").addEventListener("change", function(){
   F.linkedin.value = DEFAULTS.linkedin;
   F.website.value  = DEFAULTS.website;
   F.email.value    = "";
+  F.phone.value    = "";
   F.cta.value      = "";
   F.ctaLabel.value = "";
   render();
@@ -336,16 +342,23 @@ function buildSignature(dark){
   var name  = F.name.value.trim()  || "Full Name";
   var title = F.title.value.trim() || "Job Title";
   var li = F.linkedin.value.trim(), web = F.website.value.trim(), mail = F.email.value.trim();
+  var phone = F.phone.value.trim();
   // If the value looks like an email (has @ and no protocol), wrap in mailto:
   // so clicking the envelope opens a new mail. URLs pass through unchanged.
   if (mail && mail.indexOf("@") > -1 && !/^https?:|^mailto:/i.test(mail)) {
     mail = "mailto:" + mail;
   }
+  // Phone: build a tel: link from the digits, but keep the displayed value as-is.
+  // Spaces, brackets, and + are stripped from the href so it dials cleanly.
+  var phoneHref = "";
+  if (phone) {
+    phoneHref = /^tel:/i.test(phone) ? phone : "tel:" + phone.replace(/[^\d+]/g, "");
+  }
   var cta = F.cta.value.trim();
   var quote = DEFAULTS.quote;
   var ctaLabel = F.ctaLabel.value.trim() || "Book a call";
 
-  var logo = A.logo, liIc = A.li, webIc = A.web, mailIc = A.mail;
+  var logo = A.logo, liIc = A.li, webIc = A.web, mailIc = A.mail, phoneIc = A.phone;
   var nameC = dark ? "#ffffff" : "#000000";
   var subC  = dark ? "#9aa0a6" : "#666666";
 
@@ -357,7 +370,8 @@ function buildSignature(dark){
       + 'style="display:block;border:0;width:24px;height:24px;"></a></td>';
   }
   var iconsRow = '<table border="0" cellpadding="0" cellspacing="0"><tr>'
-      + icon(li, liIc, "LinkedIn") + icon(web, webIc, "Website") + icon(mail, mailIc, "Email")
+      + icon(li, liIc, "LinkedIn") + icon(web, webIc, "Website")
+      + icon(mail, mailIc, "Email") + icon(phoneHref, phoneIc, "Phone")
       + '</tr></table>';
 
   var ctaRow = cta
@@ -378,7 +392,7 @@ function buildSignature(dark){
       + '<td style="vertical-align:top;padding-right:12px;"><img src="'+A.quote+'" width="34" alt="" style="display:block;border:0;width:34px;height:auto;"></td>'
       + '<td style="vertical-align:middle;">'
       + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:17px;color:'+nameC+';">'+esc(quote)+'</div>'
-      + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:.04em;color:'+subC+';text-transform:uppercase;padding-top:3px;">&mdash; Hardman &amp; Co, 2025.</div>'
+      + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:.04em;color:'+subC+';text-transform:uppercase;padding-top:3px;">&mdash; Hardman &amp; Co, 2026.</div>'
       + '</td></tr></table></td></tr>'
       + '<tr><td style="border-top:1px solid '+(dark?"#2a2a2a":"#e2e2de")+';font-size:0;line-height:0;">&nbsp;</td></tr>'
       + '</table></td></tr>'
@@ -411,16 +425,21 @@ function buildSignature(dark){
       + '</td></tr></table>'
       + '</td></tr>';
   } else {
-    var valign = cta ? "middle" : "top";
     topBlock = '<tr><td>'
       + '<table border="0" cellpadding="0" cellspacing="0"><tr>'
-      + '<td style="vertical-align:'+valign+';padding-right:18px;">'
+      + '<td style="vertical-align:top;padding-right:18px;">'
+      + '<table border="0" cellpadding="0" cellspacing="0" style="height:100%;"><tbody>'
+      + '<tr><td style="vertical-align:top;line-height:0;font-size:0;">'
       + '<img src="'+esc(headshot)+'" width="100" height="78" alt="'+esc(name)+'" style="display:block;border:0;width:100px;height:78px;border-radius:2px;">'
-      + '<div style="height:10px;line-height:10px;font-size:10px;">&nbsp;</div>'
+      + '</td></tr>'
+      + '<tr><td style="height:100%;">&nbsp;</td></tr>'
+      + '<tr><td style="vertical-align:bottom;line-height:0;font-size:0;">'
       + '<a href="'+esc(web||"#")+'" target="_blank" style="text-decoration:none;">'
       + '<img src="'+logo+'" width="100" alt="Haatch" style="display:block;border:0;width:100px;max-width:100px;height:auto;"></a>'
+      + '</td></tr>'
+      + '</tbody></table>'
       + '</td>'
-      + '<td style="vertical-align:'+valign+';">'
+      + '<td style="vertical-align:top;">'
       + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;color:'+nameC+';line-height:1.15;">'+esc(name)+'</div>'
       + '<div style="height:5px;line-height:5px;font-size:5px;">&nbsp;</div>'
       + '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:'+subC+';">'+esc(title)+'</div>'
